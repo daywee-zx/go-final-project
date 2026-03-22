@@ -8,10 +8,6 @@ import (
 	"time"
 )
 
-var (
-	daysInMonth = []int{31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31}
-)
-
 func NextDate(now time.Time, dstart string, repeat string) (string, error) {
 	startTime, err := time.Parse(timeFormat, dstart)
 	if err != nil {
@@ -99,7 +95,7 @@ func weekFunc(now, start time.Time, repeatData []string) (string, error) {
 	}
 
 	start = start.AddDate(0, 0, 1)
-	for start.Before(now) || !slices.Contains(repeatDaysInt, int(start.Weekday())) {
+	for start.Before(now) || start.Equal(now) || !slices.Contains(repeatDaysInt, int(start.Weekday())) {
 		start = start.AddDate(0, 0, 1)
 	}
 
@@ -147,7 +143,7 @@ func monthFunc(now, start time.Time, repeatData []string) (string, error) {
 	start = start.AddDate(0, 0, 1)
 
 	// cursed logical equation but it works. can be simplified TBD
-	for start.Before(now) || !((!checkMonth || slices.Contains(monthDataInt, int(start.Month()))) && isDayInMonth(start, dayDataInt)) {
+	for start.Before(now) || start.Equal(now) || !((!checkMonth || slices.Contains(monthDataInt, int(start.Month()))) && isDayInMonth(start, dayDataInt)) {
 		// can be optimized by adding months in some cases TBD
 		start = start.AddDate(0, 0, 1)
 	}

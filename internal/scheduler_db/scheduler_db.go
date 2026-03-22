@@ -2,7 +2,6 @@ package scheduler_db
 
 import (
 	"database/sql"
-	"os"
 	"strconv"
 
 	_ "modernc.org/sqlite"
@@ -28,27 +27,17 @@ var (
 	ErrNotFound = sql.ErrNoRows
 )
 
-func Init(dbPath string) (*SchedulerDB, error) {
-	var install bool
+func New(db *sql.DB) *SchedulerDB {
+	return &SchedulerDB{DB: db}
+}
 
-	_, err := os.Stat(dbPath)
-	if os.IsNotExist(err) {
-		install = true
-	}
-
-	db, err := sql.Open("sqlite", dbPath)
+func (db *SchedulerDB) Init() error {
+	_, err := db.DB.Exec(schema)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	if install {
-		_, err = db.Exec(schema)
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	return &SchedulerDB{DB: db}, nil
+	return nil
 }
 
 type Task struct {
@@ -102,6 +91,10 @@ func (db *SchedulerDB) GetTasks(limit int) ([]*Task, error) {
 		return nil, err
 	}
 	defer rows.Close()
+
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
 
 	var tasks []*Task = make([]*Task, 0, limit)
 	for rows.Next() {

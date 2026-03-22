@@ -41,13 +41,14 @@ func checkDate(task *scheduler_db.Task) error {
 	return nil
 }
 
-func respondJSON(w http.ResponseWriter, item any) {
+func respondJSON(w http.ResponseWriter, item any, status int) {
 	itemJSON, err := json.Marshal(item)
 	if err != nil {
 		fmt.Println("Failed to marshal JSON:", err)
 		return
 	}
 
+	w.WriteHeader(status)
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 	fmt.Fprint(w, string(itemJSON))
 }

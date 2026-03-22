@@ -6,16 +6,7 @@ import (
 	"go_final/internal/scheduler_db"
 	"log"
 	"net/http"
-	"os"
 	"time"
-)
-
-var (
-	passwordUpdateInterval = 1 * time.Hour
-)
-
-const (
-	passwordEnvVar = "TODO_PASSWORD"
 )
 
 type Server struct {
@@ -24,7 +15,7 @@ type Server struct {
 	password string
 }
 
-func NewServer(port string, logs *log.Logger, db *scheduler_db.SchedulerDB, password string) *Server {
+func New(port string, logs *log.Logger, db *scheduler_db.SchedulerDB, password string) *Server {
 	hashString := ""
 	if len(password) > 0 {
 		passwordHash := sha256.Sum256([]byte(password))
@@ -47,9 +38,6 @@ func NewServer(port string, logs *log.Logger, db *scheduler_db.SchedulerDB, pass
 }
 
 func (s *Server) Init(webDir string) error {
-	// pulls new password fron env every hour
-	go s.updatePassword()
-
 	mux := http.NewServeMux()
 
 	mux.Handle("/", http.FileServer(http.Dir(webDir)))
@@ -91,16 +79,5 @@ func (s *Server) checkAuth(next http.HandlerFunc) http.HandlerFunc {
 		}
 
 		next(w, r)
-	}
-}
-
-func (s *Server) updatePassword() {
-	for {
-		time.Sleep(passwordUpdateInterval)
-		password := os.Getenv(passwordEnvVar)
-		if password != "" {
-			passwordHash := sha256.Sum256([]byte(password))
-			s.password = hex.EncodeToString(passwordHash[:])
-		}
 	}
 }

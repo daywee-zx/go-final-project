@@ -1,6 +1,7 @@
 package main
 
 import (
+	"database/sql"
 	"go_final/internal/scheduler_db"
 	"go_final/internal/server"
 	"log"
@@ -46,15 +47,29 @@ func main() {
 	if err != nil {
 		logPath = os.Stdout
 	}
-
 	logs := log.New(logPath, "", log.LstdFlags)
 
-	db, err := scheduler_db.Init(dbPath)
+	install := false
+	_, err = os.Stat(dbPath)
+	if os.IsNotExist(err) {
+		install = true
+	}
+
+	db, err := sql.Open("sqlite", dbPath)
 	if err != nil {
 		logs.Fatal(err)
 	}
+	defer db.Close()
 
-	s := server.NewServer(port, logs, db, password)
+	schedulerDB := scheduler_db.New(db)
+	if install {
+		err = schedulerDB.Init()
+		if err != nil {
+			logs.Fatal(err)
+		}
+	}
+
+	s := server.New(port, logs, schedulerDB, password)
 
 	logs.Print("Starting server on port ", port)
 	logs.Fatal(s.Init(webDir))
